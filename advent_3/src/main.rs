@@ -3,7 +3,7 @@ use std::fs::read_to_string;
 fn main() {
     let mut prio = 0;
 
-    let mut priorizer = new_badge_priorizer();
+    let mut priorizer = ItemPriorizer {};
 
     for line in read_to_string("./input.txt").unwrap().lines() {
         prio += priorizer.get_prio(line);
