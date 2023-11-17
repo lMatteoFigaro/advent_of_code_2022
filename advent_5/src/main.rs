@@ -8,32 +8,33 @@ fn main() {
 
     for line in read_to_string("./input.txt").unwrap().lines() {
         if line == "" {
+            println!("finished stack {:?}", stacks);
+            stacks.print();
+            println!("");
             continue;
         }
 
         if let Some(caps) = re.captures(line) {
+            println!("{}", line);
             let repeat: u8 = caps[1].parse().unwrap();
             let from: usize = caps[2].parse().unwrap();
             let to: usize = caps[3].parse().unwrap();
-            println!("got move: {} from : {}, to: {}", repeat, from, to);
-            println!("{:?}", stacks);
-            stacks.move_elem(repeat, from, to);
+            stacks.move_elem_stack(repeat, from, to);
         };
 
         if !line.contains(|c| c == '[' || c == ']') {
             continue;
         }
 
-        line.replace('[', "")
-            .replace(']', "")
-            .replace("   ", " ")
-            .chars()
-            .enumerate()
-            .for_each(|(i, c)| {
-                if c != ' ' {
-                    stacks.queue(i / 2, c)
-                }
-            });
+        line.chars().enumerate().for_each(|(i, c)| {
+            if i == 0 {
+                return;
+            }
+            let pos = i - 1;
+            if pos % 4 == 0 && c != ' ' {
+                stacks.queue(pos / 4, c)
+            }
+        });
     }
 
     println!("{:?}", stacks);
@@ -73,6 +74,32 @@ impl Stacks {
             };
             self.stacks.get_mut(to).unwrap().push_front(elem);
             i = i - 1;
+        }
+    }
+
+    fn move_elem_stack(&mut self, num: u8, from: usize, to: usize) {
+        let mut i = num;
+        let from = from - 1;
+        let to = to - 1;
+
+        let mut current_stack = VecDeque::new();
+        while i > 0 {
+            let Some(elem) = self
+                .stacks
+                .get_mut(from)
+                .expect("could not get stack")
+                .pop_front()
+            else {
+                return;
+            };
+            current_stack.push_back(elem);
+            i = i - 1;
+        }
+
+        println!("got stack {:?}", current_stack);
+
+        while let Some(elem) = current_stack.pop_back() {
+            self.stacks.get_mut(to).unwrap().push_front(elem);
         }
     }
 
