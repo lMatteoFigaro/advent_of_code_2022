@@ -42,7 +42,9 @@ fn main() {
     }
     println!("{:?}", root);
 
-    let sum = find_dir(root).iter().fold(0, |acc, dir| {
+    let root_size = root.childs.iter().fold(0, |acc, dir| dir.size + acc);
+
+    let sum = find_dir(root.clone()).iter().fold(0, |acc, dir| {
         if dir.size < 100000 {
             acc + dir.size
         } else {
@@ -50,7 +52,22 @@ fn main() {
         }
     });
 
-    println!("{}", sum)
+    println!("{}", sum);
+
+    const MAX_SIZE: u64 = 70000000;
+    const MIN_AVAILABLE: u64 = 30000000;
+
+    let available = MAX_SIZE - root_size;
+    let required = MIN_AVAILABLE - available;
+
+    let size = find_dir(root.clone())
+        .iter()
+        .filter(|dir| dir.size > required)
+        .map(|dir| dir.size)
+        .min()
+        .unwrap();
+
+    println!("min size to delete {}", size);
 }
 
 #[derive(Debug, Clone)]
