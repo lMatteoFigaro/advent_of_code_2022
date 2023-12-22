@@ -1,61 +1,61 @@
-use regex::Regex;
-use std::{borrow::BorrowMut, fs::read_to_string};
+use std::{fs::read_to_string, thread::current};
 
 fn main() {
-    let re = Regex::new(r"^- (.*) \(dir\)$").unwrap();
-    let re_file = Regex::new(r"^- (.*) \(file, size=(\d+)\)$").unwrap();
+    let mut root = Dir {
+        childs: Vec::new(),
+        size: 0,
+        name: "/".to_string(),
+    };
 
-    let mut parents = Vec::new();
-    let mut current_dir = Option::<Dir>::None;
-    let mut last_dir = Option::<Dir>::None;
-    let space_count = 0;
+    let mut path = Vec::new();
+    let mut current = &mut root;
+
     for line in read_to_string("./input.txt").unwrap().lines() {
-        let count = count_spaces_before_char(line, '-');
-
-        let line = line.trim();
-
-        if let Some(caps) = re.captures(line) {
-            if let Some(name) = caps.get(1) {
-                println!("is dir with name {}", name.as_str());
-                let dir = Dir {
-                    childs: Vec::new(),
-                    size: 0,
-                    name: name.as_str().to_string(),
-                };
-                if let Some(dir) = current_dir.borrow_mut() {
-                    parents.push(dir);
-                }
-                last_dir = Option::Some(dir)
+        println!("{}", line);
+        if line.starts_with("$ cd") {
+            let name = line.split_whitespace().last().unwrap();
+            if name == "/" {
+                continue;
             }
-        }
-
-        if let Some(caps) = re_file.captures(line) {
-            if let (Some(name), Some(size)) = (caps.get(1), caps.get(2)) {
-                println!(
-                    "is file with size {} and name {}",
-                    size.as_str(),
-                    name.as_str()
-                );
-                let file = File {
-                    size: size.as_str().parse().unwrap(),
-                    name: name.as_str().to_string(),
-                };
-                if let Some(dir) = current_dir.borrow_mut() {
-                    dir.childs.push(FileSystem::File(file.clone()));
-                    dir.size = dir.size + file.size;
-                }
+            if name == ".." {
+                path.pop();
+                let previous_size = current.size;
+                current = get_dir(&mut root, &path);
+                current.size += previous_size;
+            } else {
+                path.push(name.to_string());
+                current = get_dir(&mut root, &path);
             }
+            println!("curent dir is {}", current.name)
+        } else if line.starts_with("dir") {
+            let elems: Vec<&str> = line.split(' ').collect();
+            let name = elems.get(1).unwrap();
+
+            current.childs.push(Dir {
+                childs: Vec::new(),
+                size: 0,
+                name: name.to_string(),
+            });
+        } else if let Some(size) = starts_with_number(line) {
+            current.size = current.size + size;
         }
     }
+    println!("{:?}", root);
+
+    let sum = find_dir(root).iter().fold(0, |acc, dir| {
+        if dir.size < 100000 {
+            acc + dir.size
+        } else {
+            acc
+        }
+    });
+
+    println!("{}", sum)
 }
 
-enum FileSystem {
-    File(File),
-    Dir,
-}
-
+#[derive(Debug, Clone)]
 struct Dir {
-    childs: Vec<FileSystem>,
+    childs: Vec<Dir>,
     size: u64,
     name: String,
 }
@@ -66,17 +66,35 @@ struct File {
     name: String,
 }
 
-fn count_spaces_before_char(s: &str, target: char) -> usize {
-    let mut space_count = 0;
+fn starts_with_number(s: &str) -> Option<u64> {
+    s.split_whitespace()
+        .next()
+        .and_then(|first_part| first_part.parse::<u64>().ok())
+}
 
-    for c in s.chars() {
-        if c == target {
-            return space_count;
-        } else if c == ' ' {
-            space_count += 1;
-        } else {
-            space_count = 0;
-        }
+fn get_dir<'a>(root: &'a mut Dir, path: &Vec<String>) -> &'a mut Dir {
+    let mut current = root;
+    if path.len() == 0 {
+        return current;
     }
-    space_count
+
+    for name in path {
+        current = current
+            .childs
+            .iter_mut()
+            .find(|dir| &dir.name == name)
+            .unwrap()
+    }
+
+    return current;
+}
+
+fn find_dir(root: Dir) -> Vec<Dir> {
+    let mut dirs = Vec::new();
+    for dir in root.clone().childs {
+        dirs.extend(find_dir(dir))
+    }
+
+    dirs.push(root);
+    return dirs;
 }
