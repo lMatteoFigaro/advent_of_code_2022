@@ -20,22 +20,18 @@ trees.forEach((line, i) => {
 		}
 		
 		if (line.slice(0, j+1).filter((e) => e >= tree).length === 1) {
-			console.log('visible i ',i,' j ', j, ' value ', tree)
 			visible++
 			return
 		}
 		if (line.slice(j, line.length).filter((e) => e >= tree).length === 1 ) {
-			console.log('visible i ',i,' j ', j, ' value ', tree)
 			visible++
 			return
 		}
 		if (trees.slice(0, i+1).map((row) => row[j]).filter((e) => e >= tree).length === 1) {
-			console.log('visible i ',i,' j ', j, ' value ', tree)
 			visible++
 			return
 		}
 		if (trees.slice(i, trees.length).map((row) => row[j]).filter((e) => e >= tree).length === 1) {
-			console.log('visible i ',i,' j ', j, ' value ', tree)
 			visible++
 			return
 		}
@@ -43,3 +39,35 @@ trees.forEach((line, i) => {
 });
 
 console.log(visible)
+
+var scoreList = []
+
+trees.forEach((line, i) => {
+	line.forEach((tree, j) => {
+		score = countVisibility(line.slice(0, j).reverse(),tree)
+
+		score *= countVisibility(line.slice(j+1, line.length),tree)
+
+		score *= countVisibility(trees.slice(0, i).map((row) => row[j]).reverse(), tree)
+
+		score *= countVisibility(trees.slice(i+1, trees.length).map((row) => row[j]),tree)
+
+		scoreList.push(score)
+	})
+});
+
+var maxScore = scoreList.sort((a,b) => a-b)[scoreList.length-1]
+console.log(scoreList.length)
+
+console.log('max score is ', maxScore)
+
+function countVisibility(line, height) {
+	var count = 0
+	for (const tree of line) {
+		count++
+		if (tree >= height) {
+			return count
+		}
+	}
+	return count
+}
