@@ -17,18 +17,21 @@ const val = lines
 .flat()
 .map((val, i) => {
 	x += val
-	console.log('x', x, 'val',val,'cycle', i+1)
 	return x 
 })
-.map((val,i) =>{
-	const cycle = i +1
-	if ((cycle-20) % 40 !== 0) return 0
-	const cycleVal = val * cycle
-	console.log('cycle', cycle, 'value', val, 'cycleVal', cycleVal)
-	return cycleVal
-})
-.reduce((acc,val,i) => {
-	return acc + val 
+.forEach((x,i) => { 
+	const cycle = i + 1
+	const pos = i % 40
+	if ( pos >= x - 1 && pos <= x + 1) {
+		// console.log('cycle is', cycle, 'x is', x, 'drawing #')
+		process.stdout.write('#')
+	} else {
+		// console.log('cycle is', cycle, 'x is', x, 'drawing .')
+		process.stdout.write('.')
+	}
+
+	if (cycle % 40 === 0 ) {
+		console.log('')
+	}
 })
 
-console.log(val)
